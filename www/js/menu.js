@@ -27,6 +27,7 @@ if( /(android)/i.test(navigator.userAgent) ) {
 }
 
 var pos = [];
+var text;
 BasicGame.menuGame.prototype = {
 
 	preload: function(){
@@ -36,9 +37,11 @@ BasicGame.menuGame.prototype = {
 		this.load.image('logo', 'img/logo3.png');
         this.load.image('bg2', 'img/secondball.png');
         this.load.image('raster', 'img/chara.png');
+        this.load.image('rasterb', 'img/charb.png');
         this.load.image('clouda', 'img/cloud-1.png');
         this.load.image('cloudb', 'img/cloud-2.png');
         this.load.image('cloudc', 'img/clouds-small.png');
+        this.load.image("arm", "arm.png");
 		//this.scale.pageAlignHorizontally = true;
         //this.scale.pageAlignVertically = true;
         this.scale.scaleMode = Phaser.ScaleManager.EXACT_FIT;
@@ -72,13 +75,36 @@ BasicGame.menuGame.prototype = {
         this.cloudb = this.add.image(this.rnd.between(0, 170), this.rnd.between(200, 500), 'cloudb');
         this.cloudc = this.add.image(this.rnd.between(-70, 200), this.rnd.between(200, 700), 'cloudc');
         this.add.image(20, 80, 'logo');
-        this.char = this.add.sprite(20, 120, 'raster');
-        this.physics.enable(this.char, Phaser.Physics.ARCADE);
+        this.char = this.add.sprite(this.world.randomX, this.world.randomY, 'raster');
+        //this.anima= this.physics.enable(this.char, Phaser.Physics.ARCADE);
+        this.charb = this.add.sprite(this.world.randomX, this.world.randomY, 'rasterb');
+        this.physics.enable([this.char, this.charb], Phaser.Physics.ARCADE);
         this.char.body.velocity.setTo(200, 200);
         this.char.body.collideWorldBounds = true;
         this.char.body.bounce.set(1);
+        
+        
+        this.charb.body.velocity.setTo(200, 200);
+        this.charb.body.collideWorldBounds = true;
+        this.charb.body.bounce.set(1);
+        
         /*this.char.animations.add('toeng');
         this.char.animations.play('toeng', 15, true);*/
+        text = this.add.text(this.world.centerX, this.world.centerY, "Choose Level");
+        text.anchor.setTo(0.5);
+
+        text.font = 'Fontdiner Swanky';
+        text.fontSize = 60;
+
+        //  If we don't set the padding the font gets cut off
+        //  Comment out the line below to see the effect
+        text.padding.set(10, 16);
+
+        text.align = 'center';
+        text.stroke = '#000000';
+        text.strokeThickness = 2;
+        text.fill='#c643b2';
+        text.setShadow(5, 5, 'rgba(0,0,0,0.5)', 5);
         var style = {
                font: "bold 30px Arial",
                //fill: "#" + this.tintColor.toString(16),
@@ -89,10 +115,10 @@ BasicGame.menuGame.prototype = {
           text.anchor.set(0.5);
         var textadv = this.add.text(0, 0, "Advance", style);
           textadv.anchor.set(0.5);
-		this.logo = this.add.button(this.world.centerX, this.world.centerY - 50, 'bg', this.startGame, this,'buttonOut', 'buttonOut', 'buttonOut');
+		this.logo = this.add.button(this.world.centerX, this.world.centerY + 100, 'bg', this.startGame, this,'buttonOut', 'buttonOut', 'buttonOut');
         this.logo.addChild(text);
 		this.logo.anchor.setTo(0.5, 0.5);
-		this.logo2 = this.add.button(this.world.centerX, this.world.centerY + 50, 'bg', this.startAdvance, this,'buttonOver', 'buttonOut', 'buttonOver');
+		this.logo2 = this.add.button(this.world.centerX, this.world.centerY + 200, 'bg', this.startAdvance, this,'buttonOver', 'buttonOut', 'buttonOver');
 		this.logo2.addChild(textadv);
         this.logo2.anchor.setTo(0.5, 0.5);
         this.data = this.make.tween({ y: 0 }).to( { y: 70 }, 500, Phaser.Easing.Sinusoidal.In).yoyo(true).generateData(60);
@@ -109,10 +135,41 @@ BasicGame.menuGame.prototype = {
             this.raster.alpha = (i + 1) * (1 / total);
             pos.push(i * offset);
         }
+
+        var randx = this.rnd.between(70, 570);
+          var randy = this.rnd.between(200, 900);
+          this.arm = this.add.sprite(randx, randy, "arm");
+          this.arm.anchor.set(0, 0.5);
+          this.arm.alpha = 0;
+        this.balls = [
+               this.add.sprite(randx, randy, "raster"),
+               this.add.sprite(randx, randy, "rasterb")                   
+          ]
+
+          //this.targetArray = [];
+          this.steps = 0;
+          this.rotatingDirection = this.rnd.between(0, 1);
+          this.destroy = false;
+          //this.targetGroup = this.add.group();
+          //this.balls.bringToTop;
+          this.balls[0].anchor.set(0.5);
+          //this.balls[0].tint = this.tintColor2;
+          this.balls[1].anchor.set(0.5);
+          //this.balls[1].tint = this.tintColor2;
+          this.rotationAngle = 0;
+          this.rotatingBall = 1;
+          this.input.onDown.add(this.changeBall, this);
 	},
 	update: function(){
 
-
+        this.rotationAngle = (this.rotationAngle + rotationSpeed * (this.rotatingBall * 2 - 1)) % 360;
+          this.arm.angle = this.rotationAngle + 90;
+          this.balls[this.rotatingBall].x = this.balls[1 - this.rotatingBall].x - ballDistance * Math.sin(Phaser.Math.degToRad(this.rotationAngle));
+          this.balls[this.rotatingBall].y = this.balls[1 - this.rotatingBall].y + ballDistance * Math.cos(Phaser.Math.degToRad(this.rotationAngle));
+         //this.changeBall();
+         /*this.arm.position = this.balls[this.rotatingBall].position
+          this.rotatingBall = 1 - this.rotatingBall; 
+         this.rotatingDirection = this.rnd.between(0, 1);*/
         this.rasters.resetCursor();
 
         for (var i = 0; i < this.rasters.total; i++)
@@ -127,8 +184,18 @@ BasicGame.menuGame.prototype = {
             this.rasters.cursor.y = 100 + this.data[pos[i]].y;
             this.rasters.next();
         }
-
+        this.physics.arcade.collide(this.char, this.charb);
+        
 	},
+    changeBall: function(){
+        this.arm.position = this.balls[this.rotatingBall].position
+          this.rotatingBall = 1 - this.rotatingBall;
+          this.rotationAngle = this.balls[1 - this.rotatingBall].position.angle(this.balls[this.rotatingBall].position, true) - 90;
+          this.rotatingDirection = this.rnd.between(0, 1);
+          this.arm.angle = this.rotationAngle + 90; 
+         
+          this.destroy = false;
+    },
 	startGame: function(){
 		this.state.start("playGame");
 	},
